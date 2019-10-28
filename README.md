@@ -1,6 +1,8 @@
 # FeedbackTrackerBot
  Tracks the feedback for users on /r/SportsCardTracker
  
+##### Demo up at www.reddit.com/r/kgamers
+ 
  #### How does it work?
  1. Completely fill out the fields in config.ini.  You may leave SEARCH_FLAIR alone if this is for /r/SportsCardTracker.
  2. Run the bot and it will search the users for their feedback tracker posts and then gather all their feedback and make updates if necessary.
