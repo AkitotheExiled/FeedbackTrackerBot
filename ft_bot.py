@@ -2,12 +2,14 @@ import praw
 from configparser import ConfigParser
 import requests, requests.auth
 import re
-
+from apscheduler.schedulers.background import BackgroundScheduler
+import logging
+import time
 
 class Tracker_Bot():
 
     def __init__(self):
-        self.user_agent = "FeedbackTrackerBot/V1.0 by ScoopJr"
+        self.user_agent = "FeedbackTrackerBot/V1.1 by ScoopJr"
         print('Starting up...', self.user_agent)
         CONFIG = ConfigParser()
         CONFIG.read('config.ini')
@@ -206,6 +208,23 @@ class Tracker_Bot():
             self.update_user_feedback(user)
 
 if __name__ == '__main__':
+    logging.basicConfig()
+    logging.getLogger('apscheduler').setLevel(logging.DEBUG)
     bot = Tracker_Bot()
-    bot.batch_update()
+    scheduler = BackgroundScheduler()
+    ''' ONLY CHANGE THE LINE BELOW!!!
+    minutes=2
+    means the bot is scheduled to run every 2 minutes.  Want hours instead of minutes? do hours=2 for every 2 hours.
+    want every 5, 10, 15, 20 minutes?
+    minutes=5
+    minutes=10
+    minutes=15
+    minutes=20
+    '''
+    scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', minutes=2)
+    scheduler.start()
+    print('Waiting to exit. Press CTRL+C to exit.')
+    while True:
+        time.sleep(1)
+
 
