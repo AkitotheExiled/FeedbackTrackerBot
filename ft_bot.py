@@ -131,7 +131,6 @@ class Tracker_Bot():
             print(user + "'s" + " feedback is updating...")
             print('The bot will automatically update the information for you.')
             com_t = new_info[user][0]['t']
-            print('Com_t', com_t)
             com_p = new_info[user][0]['p']
             com_n = new_info[user][0]['n']
             com_ne = new_info[user][0]['n-']
