@@ -28,7 +28,7 @@ class Tracker_Bot():
                              username=self.user)
         self.flair = CONFIG.get('main', 'SEARCH_FLAIR')
         self.authors = []
-        self.debug = bool(CONFIG.get('main', 'DEBUG'))
+        self.debug = bool(CONFIG.getboolean('main', 'DEBUG'))
 
 
 
@@ -69,12 +69,16 @@ class Tracker_Bot():
                             continue
                         if comment.author == self.user and comment.stickied:
                             regex_search = re.compile(r'\d+').findall(comment.body)
-                            if regex_search is None:
-                                regex_search = [0, 0, 0, 0]
-                            user_info[user][0]['t'] = regex_search[0]
-                            user_info[user][0]['p'] = regex_search[1]
-                            user_info[user][0]['n'] = regex_search[2]
-                            user_info[user][0]['n-'] = regex_search[3]
+                            for item in regex_search:
+                                if item is None:
+                                    regex_search[item] = 0
+                            try:
+                                user_info[user][0]['t'] = regex_search[0]
+                                user_info[user][0]['p'] = regex_search[1]
+                                user_info[user][0]['n'] = regex_search[2]
+                                user_info[user][0]['n-'] = regex_search[3]
+                            except Exception as e:
+                                print(e)
                             return user_info
                 elif not post.comments:
                     def_com = '|Feedback|0||\n|:-|:-|:-|\n|Positive 0|Neutral 0|Negative 0|'
@@ -86,12 +90,16 @@ class Tracker_Bot():
                             comment2.mod.distinguish(how='yes', sticky=True)
                         if comment.author == self.user and comment.stickied:
                             regex_search = re.compile(r'\d+').findall(comment.body)
-                            if regex_search is None:
-                                regex_search = [0, 0, 0, 0]
-                            user_info[user][0]['t'] = regex_search[0]
-                            user_info[user][0]['p'] = regex_search[1]
-                            user_info[user][0]['n'] = regex_search[2]
-                            user_info[user][0]['n-'] = regex_search[3]
+                            for item in regex_search:
+                                if item is None:
+                                    regex_search[item] = 0
+                            try:
+                                user_info[user][0]['t'] = regex_search[0]
+                                user_info[user][0]['p'] = regex_search[1]
+                                user_info[user][0]['n'] = regex_search[2]
+                                user_info[user][0]['n-'] = regex_search[3]
+                            except Exception as e:
+                                print(e)
                             if not self.reddit.submission(post.id).locked:
                                 self.reddit.submission(post.id).mod.lock()
                             return user_info
@@ -163,6 +171,7 @@ class Tracker_Bot():
 
                         body2 = '|Feedback|'+str(com_t)+'||\n|:-|:-|:-|\n|Positive '+str(com_p)+'|Neutral '+str(com_n)+'|Negative '+str(com_ne)+'|'
                         comment.edit(body2)
+                
 
         if int(old_info[user][0]['t']) == new_info[user][0]['t']:
             return print(str(user) + ' has no new feedback.')
@@ -177,7 +186,7 @@ if __name__ == '__main__':
     bot = Tracker_Bot()
     scheduler = BackgroundScheduler()
     scheduler.start()
-    scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', minutes=2)
+    scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', seconds=2)
     input('The bot is running in the background. Press enter to exit.')
     scheduler.shutdown()
 
