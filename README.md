@@ -16,6 +16,7 @@ CLIENT_ID= yourclient
 SECRET= yoursecret
 SUBREDDIT= yoursubreddit
 SEARCH_FLAIR=Feedback Tracker
+DEBUG=False
 ```
 
 #### SEARCH_FLAIR
