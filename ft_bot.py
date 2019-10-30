@@ -9,7 +9,7 @@ import time
 class Tracker_Bot():
 
     def __init__(self):
-        self.user_agent = "FeedbackTrackerBot/V1.1 by ScoopJr"
+        self.user_agent = "FeedbackTrackerBot/V1.2 by ScoopJr"
         print('Starting up...', self.user_agent)
         CONFIG = ConfigParser()
         CONFIG.read('config.ini')
@@ -28,6 +28,7 @@ class Tracker_Bot():
                              username=self.user)
         self.flair = CONFIG.get('main', 'SEARCH_FLAIR')
         self.authors = []
+        self.debug = bool(CONFIG.get('main', 'DEBUG'))
 
 
 
@@ -99,11 +100,13 @@ class Tracker_Bot():
         try:
             user_info = {user: [{'t': 0, 'p': 0, 'p': 0, 'n': 0, 'n-': 0}]}
             for post in self.reddit.subreddit(self.subreddit).new():
-                if user in post.title:
-                    if '[Positive]' in post.link_flair_text:
+                if (user.lower() != post.author.name.lower()) & (user.lower() in post.title.lower()):
+                    if '[positive]' in post.title.lower():
                         user_info[user][0]['p'] += 1
-                    if '[Negative]' in post.link_flair_text:
+                    if '[negative]' in post.title.lower():
                         user_info[user][0]['n-'] += 1
+                    if '[neutral]' in post.title.lower():
+                        user_info[user][0]['n'] += 1
             user_info[user][0]['t'] = user_info[user][0]['p'] - user_info[user][0]['n-']
             print(user_info)
             return user_info
@@ -124,84 +127,46 @@ class Tracker_Bot():
             new_info = {user: [{'t': 0, 'p': 0, 'p': 0, 'n': 0, 'n-': 0}]}
         if old_info is None:
             old_info = {user: [{'t': 0, 'p': 0, 'p': 0, 'n': 0, 'n-': 0}]}
-        if int(old_info[user][0]['t']) == new_info[user][0]['t']:
-            return print(str(user) + ' has no new feedback.')
-        if int(old_info[user][0]['t']) != new_info[user][0]['t']:
-            print('This ' + user + ' has a feedback discrepency.')
-            print('I highly recommend you manually review and correct it.  However, would you like the bot to fix it automatically? \n Please type yes or no to continue.')
-            reply = input()
-            if reply in ['yes', 'y', 'es', 'yea','yeah']:
-                com_t = new_info[user][0]['t']
-                com_p = new_info[user][0]['p']
-                com_n = new_info[user][0]['n']
-                com_ne = new_info[user][0]['n-']
-                for post in self.reddit.subreddit(self.subreddit).search(query=user + ' ' + 'flair:' + self.flair):
-                    if post.archived:
-                        continue
-                    for comment in post.comments:
-                        if comment.author == self.user and comment.stickied:
-                            body = comment.body
-                            body2 = list(body)
-                            regex = re.compile(r'\d+').findall(body)
-                            # print(regex[0], regex[1], regex[2], regex[3])
-                            for match in re.finditer(regex[0], body):
-                                print('THESE NUMBERS CORRESPOND TO THE FEEDBACK #', match.start(), match.end())
-                                body2[match.start():match.end()] = str(com_t)
-                            for match in re.finditer(regex[1], body):
-                                print('THESE NUMBERS CORRESPOND TO THE FEEDBACK #', match.start(), match.end())
-                                body2[match.start():match.end()] = str(com_p)
-                            for match in re.finditer(regex[2], body):
-                                print('THESE NUMBERS CORRESPOND TO THE FEEDBACK #', match.start(), match.end())
-                                body2[match.start():match.end()] = str(com_n)
-                            for match in re.finditer(regex[3], body):
-                                print('THESE NUMBERS CORRESPOND TO THE FEEDBACK #', match.start(), match.end())
-                                body2[match.start():match.end()] = str(com_ne)
-                            '''
-                            body2[10] = str(com_t)
-                            body2[35] = str(com_p)
-                            body2[45] = str(com_n)
-                            body2[56] = str(com_ne)
-                            '''
-                            body2 = "".join(body2)
-                            comment.edit(body2)
-            if reply in ['no', 'nah', 'n', 'na']:
-                return print(user, 'needs a manual review on their feedback tracker. \n If you believe this to be an error plesae contact github.com/AkitoTheExiled for bot assistance.')
-        else:
-            com_t = int(old_info[user][0]['t']) + new_info[user][0]['t']
-            com_p = int(old_info[user][0]['p']) + new_info[user][0]['p']
-            com_n = int(old_info[user][0]['n']) + new_info[user][0]['n']
-            com_ne = int(old_info[user][0]['n-']) + new_info[user][0]['n-']
+        if int(old_info[user][0]['t']) != new_info[user][0]['t'] or int(old_info[user][0]['n']) != new_info[user][0]['n']:
+            print(user + "'s" + " feedback is updating...")
+            print('The bot will automatically update the information for you.')
+            com_t = new_info[user][0]['t']
+            print('Com_t', com_t)
+            com_p = new_info[user][0]['p']
+            com_n = new_info[user][0]['n']
+            com_ne = new_info[user][0]['n-']
             for post in self.reddit.subreddit(self.subreddit).search(query=user + ' ' + 'flair:' + self.flair):
                 if post.archived:
                     continue
                 for comment in post.comments:
                     if comment.author == self.user and comment.stickied:
-                        body = comment.body
-                        body2 = list(body)
-                        regex = re.compile(r'\d+').findall(body)
-                        #print(regex[0], regex[1], regex[2], regex[3])
-                        for match in re.finditer(regex[0], body):
-                            print('THESE NUMBERS CORRESPOND TO THE FEEDBACK #',match.start(), match.end())
-                            body2[match.start():match.end()] = str(com_t)
-                        for match in re.finditer(regex[1], body):
-                            print('THESE NUMBERS CORRESPOND TO THE FEEDBACK #',match.start(), match.end())
-                            body2[match.start():match.end()] = str(com_p)
-                        for match in re.finditer(regex[2], body):
-                            print('THESE NUMBERS CORRESPOND TO THE FEEDBACK #',match.start(), match.end())
-                            body2[match.start():match.end()] = str(com_n)
-                        for match in re.finditer(regex[3], body):
-                            print('THESE NUMBERS CORRESPOND TO THE FEEDBACK #',match.start(), match.end())
-                            body2[match.start():match.end()] = str(com_ne)
-                        print(body2)
-                        '''
-                        body2[10] = str(com_t)
-                        body2[35] = str(com_p)
-                        body2[45] = str(com_n)
-                        body2[56] = str(com_ne)
-                        '''
-                        body2 = "".join(body2)
+                        if self.debug:
+                            body = comment.body
+                            # body2 = list(body)
+                            regex = re.compile(r'\d+').findall(body)
+                            # print(regex[0], regex[1], regex[2], regex[3])
+                            for match in re.finditer(regex[0], body):
+                                print('DEBUG: Feedback 1 Position', match.start(), match.end())
+                                # body2[match.start():match.end()] = str(com_t)
+
+                            for match in re.finditer(regex[1], body):
+                                print('DEBUG: Feedback 2 Position', match.start(), match.end())
+                                # body2[match.start():match.end()] = str(com_p)
+
+                            for match in re.finditer(regex[2], body):
+                                print('DEBUG: Feedback 3 Position', match.start(), match.end())
+                                # body2[match.start():match.end()] = str(com_n)
+
+                            for match in re.finditer(regex[3], body):
+                                print('DEBUG: Feedback 4 Position', match.start(), match.end())
+                                # body2[match.start():match.end()] = str(com_ne)
+                            # body2 = "".join(body2)
+
+                        body2 = '|Feedback|'+str(com_t)+'||\n|:-|:-|:-|\n|Positive '+str(com_p)+'|Neutral '+str(com_n)+'|Negative '+str(com_ne)+'|'
                         comment.edit(body2)
 
+        if int(old_info[user][0]['t']) == new_info[user][0]['t']:
+            return print(str(user) + ' has no new feedback.')
     def batch_update(self):
         users = self.find_users()
         for user in users:
@@ -212,19 +177,10 @@ if __name__ == '__main__':
     logging.getLogger('apscheduler').setLevel(logging.DEBUG)
     bot = Tracker_Bot()
     scheduler = BackgroundScheduler()
-    ''' ONLY CHANGE THE LINE BELOW!!!
-    minutes=2
-    means the bot is scheduled to run every 2 minutes.  Want hours instead of minutes? do hours=2 for every 2 hours.
-    want every 5, 10, 15, 20 minutes?
-    minutes=5
-    minutes=10
-    minutes=15
-    minutes=20
-    '''
-    scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', minutes=2)
     scheduler.start()
-    print('Waiting to exit. Press CTRL+C to exit.')
-    while True:
-        time.sleep(1)
+    scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', minutes=2)
+    input('The bot is running in the background. Press enter to exit.')
+    scheduler.shutdown()
+
 
 
