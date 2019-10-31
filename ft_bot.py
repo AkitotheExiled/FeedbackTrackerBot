@@ -4,13 +4,15 @@ import requests, requests.auth
 import re
 from apscheduler.schedulers.background import BackgroundScheduler
 import logging
-import time
+import numpy as np
+import datetime
+
 
 
 class Tracker_Bot():
 
     def __init__(self):
-        self.user_agent = "FeedbackTrackerBot/V1.2 by ScoopJr"
+        self.user_agent = "FeedbackTrackerBot/V1.3 by ScoopJr"
         print('Starting up...', self.user_agent)
         CONFIG = ConfigParser()
         CONFIG.read('config.ini')
@@ -30,6 +32,7 @@ class Tracker_Bot():
         self.flair = CONFIG.get('main', 'SEARCH_FLAIR')
         self.authors = []
         self.debug = bool(CONFIG.getboolean('main', 'DEBUG'))
+        self.dict = {}
 
     def get_token(self):
         client_auth = requests.auth.HTTPBasicAuth(self.client, self.secret)
@@ -42,7 +45,8 @@ class Tracker_Bot():
 
     def find_users(self):
         try:
-            for post in self.reddit.subreddit(self.subreddit).search(query='flair:' + self.flair):
+            posts = np.stack(self.reddit.subreddit(self.subreddit).search(query='flair:' + self.flair))
+            for post in posts:
                 if post.author.name not in self.authors:
                     self.authors.append(post.author.name)
             return self.authors
@@ -55,70 +59,86 @@ class Tracker_Bot():
             for post in self.reddit.subreddit(self.subreddit).search(query='flair:' + self.flair):
                 if post.archived:
                     continue
+
                 if post.author.name == user:
-                    if post.comments:
-                        for comment in post.comments:
-                            if comment.author == self.user and not comment.stickied:
-                                comment2 = self.reddit.comment(comment.id)
-                                comment2.mod.distinguish(how='yes', sticky=True)
-                            if comment.author != self.user and not comment.stickied:
-                                if self.reddit.submission(post.id).locked:
-                                    self.reddit.submission(post.id).mod.unlock()
-                                def_com = '|Feedback|0||\n|:-|:-|:-|\n|Positive 0|Neutral 0|Negative 0|'
-                                post.reply(def_com)
-                                comment.refresh()
-                                if not self.reddit.submission(post.id).locked:
-                                    self.reddit.submission(post.id).mod.lock()
-                                continue
-                            if comment.author == self.user and comment.stickied:
-                                regex_search = re.compile(r'\d+').findall(comment.body)
-                                for item in regex_search:
-                                    if item is None:
-                                        regex_search[item] = 0
-                                try:
-                                    user_info[user][0]['t'] = regex_search[0]
-                                    user_info[user][0]['p'] = regex_search[1]
-                                    user_info[user][0]['n'] = regex_search[2]
-                                    user_info[user][0]['n-'] = regex_search[3]
-                                except Exception as e:
-                                    print(e)
-                                return user_info
-                    elif not post.comments:
+                    if not post.comments:
                         def_com = '|Feedback|0||\n|:-|:-|:-|\n|Positive 0|Neutral 0|Negative 0|'
                         post.reply(def_com)
                         for comment in post.comments:
-                            comment.refresh()
-                            if comment.author == self.user and not comment.stickied:
-                                comment2 = self.reddit.comment(comment.id)
-                                comment2.mod.distinguish(how='yes', sticky=True)
-                            if comment.author == self.user and comment.stickied:
-                                regex_search = re.compile(r'\d+').findall(comment.body)
-                                for item in regex_search:
-                                    if item is None:
-                                        regex_search[item] = 0
-                                try:
-                                    user_info[user][0]['t'] = regex_search[0]
-                                    user_info[user][0]['p'] = regex_search[1]
-                                    user_info[user][0]['n'] = regex_search[2]
-                                    user_info[user][0]['n-'] = regex_search[3]
-                                except Exception as e:
-                                    print(e)
-                                if not self.reddit.submission(post.id).locked:
-                                    self.reddit.submission(post.id).mod.lock()
-                                return user_info
+                            if comment.author != self.user:
+                                continue
+                            if comment.author == self.user:
+                                if not comment.stickied:
+                                    comment2 = self.reddit.comment(comment.id)
+                                    comment2.mod.distinguish(how='yes', sticky=True)
+                                if comment.stickied:
+                                    regex_search = re.compile(r'\d+').findall(comment.body)
+                                    for item in regex_search:
+                                        if item is None:
+                                            regex_search[item] = 0
+                                    try:
+                                        user_info[user][0]['t'] = regex_search[0]
+                                        user_info[user][0]['p'] = regex_search[1]
+                                        user_info[user][0]['n'] = regex_search[2]
+                                        user_info[user][0]['n-'] = regex_search[3]
+                                    except Exception as e:
+                                        print(e)
+                                    if not self.reddit.submission(post.id).locked:
+                                        self.reddit.submission(post.id).mod.lock()
+                                    return user_info
+                    if post.comments:
+                        no_fb_com = False
+                        for comment in post.comments:
+                            if comment.author == self.user:
+                                if comment.stickied & ('feedback' in comment.body.lower()):
+                                    regex_search = re.compile(r'\d+').findall(comment.body)
+                                    for item in regex_search:
+                                        if item is None:
+                                            regex_search[item] = 0
+                                    try:
+                                        user_info[user][0]['t'] = regex_search[0]
+                                        user_info[user][0]['p'] = regex_search[1]
+                                        user_info[user][0]['n'] = regex_search[2]
+                                        user_info[user][0]['n-'] = regex_search[3]
+                                    except Exception as e:
+                                        print(e)
+                                    return user_info
+                                if not comment.stickied & ('feedback' in comment.body.lower()):
+                                    comment2 = self.reddit.comment(comment.id)
+                                    comment2.mod.distinguish(how='yes', sticky=True)
+                                    regex_search = re.compile(r'\d+').findall(comment.body)
+                                    for item in regex_search:
+                                        if item is None:
+                                            regex_search[item] = 0
+                                    try:
+                                        user_info[user][0]['t'] = regex_search[0]
+                                        user_info[user][0]['p'] = regex_search[1]
+                                        user_info[user][0]['n'] = regex_search[2]
+                                        user_info[user][0]['n-'] = regex_search[3]
+                                    except Exception as e:
+                                        print(e)
+                                    return user_info
+                        no_fb_com = True
+                        if no_fb_com:
+                            if self.reddit.submission(post.id).locked:
+                                self.reddit.submission(post.id).mod.unlock()
+                            def_com = '|Feedback|0||\n|:-|:-|:-|\n|Positive 0|Neutral 0|Negative 0|'
+                            post.reply(def_com)
+                            if not self.reddit.submission(post.id).locked:
+                                self.reddit.submission(post.id).mod.lock()
         except Exception as e:
             print(e)
 
     def search_for_feedback(self, user):
         try:
             user_info = {user: [{'t': 0, 'p': 0, 'p': 0, 'n': 0, 'n-': 0}]}
-            for post in self.reddit.subreddit(self.subreddit).new():
+            for post in self.reddit.subreddit(self.subreddit).search(query='title:'+user.lower()+' NOT author:'+user.lower(), sort='new'):
                 if (user.lower() != post.author.name.lower()) & (user.lower() in post.title.lower()):
-                    if '[positive]' in post.title.lower():
+                    if 'positive' in post.title.lower():
                         user_info[user][0]['p'] += 1
-                    if '[negative]' in post.title.lower():
+                    if 'negative' in post.title.lower():
                         user_info[user][0]['n-'] += 1
-                    if '[neutral]' in post.title.lower():
+                    if 'neutral' in post.title.lower():
                         user_info[user][0]['n'] += 1
             user_info[user][0]['t'] = user_info[user][0]['p'] - user_info[user][0]['n-']
             print(user_info)
@@ -133,51 +153,47 @@ class Tracker_Bot():
             yield i
             i = s.find(p, i + 1)
 
+
     def update_user_feedback(self, user):
         old_info = self.find_users_tthread(user)
         new_info = self.search_for_feedback(user)
-        if new_info is None:
-            new_info = {user: [{'t': 0, 'p': 0, 'p': 0, 'n': 0, 'n-': 0}]}
-        if old_info is None:
-            old_info = {user: [{'t': 0, 'p': 0, 'p': 0, 'n': 0, 'n-': 0}]}
         if int(old_info[user][0]['t']) != new_info[user][0]['t'] or int(old_info[user][0]['n']) != new_info[user][0][
             'n']:
             print(user + "'s" + " feedback is updating...")
             print('The bot will automatically update the information for you.')
-            com_t = new_info[user][0]['t']
-            com_p = new_info[user][0]['p']
-            com_n = new_info[user][0]['n']
-            com_ne = new_info[user][0]['n-']
+            com_t, com_p, com_n, com_ne = new_info[user][0]['t'], new_info[user][0]['p'], new_info[user][0]['n'], new_info[user][0]['n-']
+            print(com_t, com_p, com_n, com_ne)
             for post in self.reddit.subreddit(self.subreddit).search(query=user + ' ' + 'flair:' + self.flair):
                 if post.archived:
                     continue
-                for comment in post.comments:
-                    if comment.author == self.user and comment.stickied:
-                        if self.debug:
-                            body = comment.body
-                            # body2 = list(body)
-                            regex = re.compile(r'\d+').findall(body)
-                            # print(regex[0], regex[1], regex[2], regex[3])
-                            for match in re.finditer(regex[0], body):
-                                print('DEBUG: Feedback 1 Position', match.start(), match.end())
-                                # body2[match.start():match.end()] = str(com_t)
+                if post.author.name.lower() == user.lower():
+                    for comment in post.comments:
+                        if comment.author == self.user and comment.stickied:
+                            if self.debug:
+                                body = comment.body
+                                # body2 = list(body)
+                                regex = re.compile(r'\d+').findall(body)
+                                # print(regex[0], regex[1], regex[2], regex[3])
+                                for match in re.finditer(regex[0], body):
+                                    print('DEBUG: Feedback 1 Position', match.start(), match.end())
+                                    # body2[match.start():match.end()] = str(com_t)
 
-                            for match in re.finditer(regex[1], body):
-                                print('DEBUG: Feedback 2 Position', match.start(), match.end())
-                                # body2[match.start():match.end()] = str(com_p)
+                                for match in re.finditer(regex[1], body):
+                                    print('DEBUG: Feedback 2 Position', match.start(), match.end())
+                                    # body2[match.start():match.end()] = str(com_p)
 
-                            for match in re.finditer(regex[2], body):
-                                print('DEBUG: Feedback 3 Position', match.start(), match.end())
-                                # body2[match.start():match.end()] = str(com_n)
+                                for match in re.finditer(regex[2], body):
+                                    print('DEBUG: Feedback 3 Position', match.start(), match.end())
+                                    # body2[match.start():match.end()] = str(com_n)
 
-                            for match in re.finditer(regex[3], body):
-                                print('DEBUG: Feedback 4 Position', match.start(), match.end())
-                                # body2[match.start():match.end()] = str(com_ne)
-                            # body2 = "".join(body2)
+                                for match in re.finditer(regex[3], body):
+                                    print('DEBUG: Feedback 4 Position', match.start(), match.end())
+                                    # body2[match.start():match.end()] = str(com_ne)
+                                # body2 = "".join(body2)
 
-                        body2 = '|Feedback|' + str(com_t) + '||\n|:-|:-|:-|\n|Positive ' + str(
-                            com_p) + '|Neutral ' + str(com_n) + '|Negative ' + str(com_ne) + '|'
-                        comment.edit(body2)
+                            body2 = '|Feedback|' + str(com_t) + '||\n|:-|:-|:-|\n|Positive ' + str(
+                                com_p) + '|Neutral ' + str(com_n) + '|Negative ' + str(com_ne) + '|'
+                            comment.edit(body2)
 
         if int(old_info[user][0]['t']) == new_info[user][0]['t']:
             return print(str(user) + ' has no new feedback.')
@@ -188,12 +204,17 @@ class Tracker_Bot():
             self.update_user_feedback(user)
 
 
+
 if __name__ == '__main__':
-    logging.basicConfig()
-    logging.getLogger('apscheduler').setLevel(logging.DEBUG)
     bot = Tracker_Bot()
+    if bot.debug:
+        logging.basicConfig()
+        logging.getLogger('apscheduler').setLevel(logging.DEBUG)
     scheduler = BackgroundScheduler()
+    @scheduler.scheduled_job('interval', minutes=3, next_run_time=datetime.datetime.now())
+    def run_program():
+        bot.batch_update()
     scheduler.start()
-    scheduler.add_job(bot.batch_update, 'interval', id='batch_id_001', minutes=2)
-    input('The bot is running in the background. Press enter to exit.')
+    #scheduler.add_job(bot.batch_update, 'interval', id='batch_id_001', minutes=3, next_run_time=datetime.datetime.now())
+    input('The bot is running in the background. The bot will run every 3 minutes. Press enter to exit.')
     scheduler.shutdown()
