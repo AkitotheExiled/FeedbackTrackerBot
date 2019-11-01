@@ -25,13 +25,18 @@ This is the flair for feedback tracker posts for each user.
 
 ##### requiremennts.txt
 ```
+altgraph==0.16.1
 APScheduler==3.6.1
 certifi==2019.9.11
 chardet==3.0.4
+future==0.18.1
 idna==2.8
+numpy==1.17.3
+pefile==2019.4.18
 praw==6.4.0
 prawcore==1.0.1
 pytz==2019.3
+pywin32-ctypes==0.2.0
 requests==2.22.0
 six==1.12.0
 tzlocal==2.0.0
