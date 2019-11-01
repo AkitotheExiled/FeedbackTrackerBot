@@ -34,6 +34,7 @@ class Tracker_Bot():
 
 
     def get_token(self):
+        """ Retrieves token for Reddit API."""
         client_auth = requests.auth.HTTPBasicAuth(self.client, self.secret)
         post_data = {'grant_type': 'password', 'username': self.user, 'password': self.password}
         headers = {'User-Agent': self.user_agent}
@@ -43,6 +44,7 @@ class Tracker_Bot():
         self.t_type = response2.json()['token_type']
 
     def find_users(self):
+        """Finds the names of individuals who have a feedback tracker thread."""
         try:
             posts = np.stack(self.reddit.subreddit(self.subreddit).search(query='flair:' + self.flair))
             for post in posts:
@@ -54,6 +56,7 @@ class Tracker_Bot():
 
 
     def find_users_tthread(self, user):
+        """ Returns the feedback from user's feedback thread.  If the thread has no feedback comment, it creates one."""
         try:
             user_info = {user: [{'t': None, 'p': None, 'n': None, 'n-': None}]}
             for post in self.reddit.subreddit(self.subreddit).search(query='flair:' + self.flair):
@@ -129,6 +132,7 @@ class Tracker_Bot():
             print(e)
 
     def search_for_feedback(self, user):
+        """ Searchs for the user's feedback and returns the total feedback count."""
         try:
             user_info = {user: [{'t': 0, 'p': 0, 'p': 0, 'n': 0, 'n-': 0}]}
             for post in self.reddit.subreddit(self.subreddit).search(
@@ -154,6 +158,7 @@ class Tracker_Bot():
             i = s.find(p, i + 1)
 
     def update_user_feedback(self, user):
+        """ Updates the users feedback by comparing the trade threads feedback and the feedback in the subreddit."""
         old_info = self.find_users_tthread(user)
         new_info = self.search_for_feedback(user)
         if int(old_info[user][0]['t']) != new_info[user][0]['t'] or int(old_info[user][0]['n']) != new_info[user][0][
@@ -200,6 +205,7 @@ class Tracker_Bot():
 
 
     def batch_update(self):
+        """Loops through users with trade feedback threads and runs update_user_feedback"""
         users = self.find_users()
         for user in users:
             self.update_user_feedback(user)
@@ -211,11 +217,13 @@ if __name__ == '__main__':
         logging.basicConfig()
         logging.getLogger('apscheduler').setLevel(logging.DEBUG)
     scheduler = BackgroundScheduler()
-    @scheduler.scheduled_job('interval', minutes=3, next_run_time=datetime.datetime.now())
+    @scheduler.scheduled_job('interval',id='batch_job', minutes=3)
     def run_program():
         bot.batch_update()
     scheduler.start()
-    scheduler.add_job(run_program, 'interval', id='batch_id_001', minutes=3, next_run_time=datetime.datetime.now())
+    scheduler.get_job(job_id='batch_job').modify(next_run_time=datetime.datetime.now())
+    #scheduler.add_job(run_program, 'interval', id='batch_id_001', minutes=3, next_run_time=datetime.datetime.now())
     input('The bot is running in the background. The bot will run every 3 minutes. Press enter to exit.')
     scheduler.shutdown()
+
 
