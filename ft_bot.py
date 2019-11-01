@@ -8,7 +8,6 @@ import numpy as np
 import datetime
 
 
-
 class Tracker_Bot():
 
     def __init__(self):
@@ -32,7 +31,7 @@ class Tracker_Bot():
         self.flair = CONFIG.get('main', 'SEARCH_FLAIR')
         self.authors = []
         self.debug = bool(CONFIG.getboolean('main', 'DEBUG'))
-        self.dict = {}
+
 
     def get_token(self):
         client_auth = requests.auth.HTTPBasicAuth(self.client, self.secret)
@@ -53,13 +52,13 @@ class Tracker_Bot():
         except Exception as e:
             print(e)
 
+
     def find_users_tthread(self, user):
         try:
             user_info = {user: [{'t': None, 'p': None, 'n': None, 'n-': None}]}
             for post in self.reddit.subreddit(self.subreddit).search(query='flair:' + self.flair):
                 if post.archived:
                     continue
-
                 if post.author.name == user:
                     if not post.comments:
                         def_com = '|Feedback|0||\n|:-|:-|:-|\n|Positive 0|Neutral 0|Negative 0|'
@@ -132,7 +131,8 @@ class Tracker_Bot():
     def search_for_feedback(self, user):
         try:
             user_info = {user: [{'t': 0, 'p': 0, 'p': 0, 'n': 0, 'n-': 0}]}
-            for post in self.reddit.subreddit(self.subreddit).search(query='title:'+user.lower()+' NOT author:'+user.lower(), sort='new'):
+            for post in self.reddit.subreddit(self.subreddit).search(
+                    query='title:' + user.lower() + ' NOT author:' + user.lower(), sort='new'):
                 if (user.lower() != post.author.name.lower()) & (user.lower() in post.title.lower()):
                     if 'positive' in post.title.lower():
                         user_info[user][0]['p'] += 1
@@ -153,7 +153,6 @@ class Tracker_Bot():
             yield i
             i = s.find(p, i + 1)
 
-
     def update_user_feedback(self, user):
         old_info = self.find_users_tthread(user)
         new_info = self.search_for_feedback(user)
@@ -161,7 +160,8 @@ class Tracker_Bot():
             'n']:
             print(user + "'s" + " feedback is updating...")
             print('The bot will automatically update the information for you.')
-            com_t, com_p, com_n, com_ne = new_info[user][0]['t'], new_info[user][0]['p'], new_info[user][0]['n'], new_info[user][0]['n-']
+            com_t, com_p, com_n, com_ne = new_info[user][0]['t'], new_info[user][0]['p'], new_info[user][0]['n'], \
+                                          new_info[user][0]['n-']
             print(com_t, com_p, com_n, com_ne)
             for post in self.reddit.subreddit(self.subreddit).search(query=user + ' ' + 'flair:' + self.flair):
                 if post.archived:
@@ -198,11 +198,11 @@ class Tracker_Bot():
         if int(old_info[user][0]['t']) == new_info[user][0]['t']:
             return print(str(user) + ' has no new feedback.')
 
+
     def batch_update(self):
         users = self.find_users()
         for user in users:
             self.update_user_feedback(user)
-
 
 
 if __name__ == '__main__':
@@ -215,6 +215,7 @@ if __name__ == '__main__':
     def run_program():
         bot.batch_update()
     scheduler.start()
-    #scheduler.add_job(bot.batch_update, 'interval', id='batch_id_001', minutes=3, next_run_time=datetime.datetime.now())
+    scheduler.add_job(run_program, 'interval', id='batch_id_001', minutes=3, next_run_time=datetime.datetime.now())
     input('The bot is running in the background. The bot will run every 3 minutes. Press enter to exit.')
     scheduler.shutdown()
+
