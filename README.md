@@ -46,24 +46,4 @@ websocket-client==0.56.0
 ```
 
 ##### Changing bot run time?
-The bot is scheduled to run every 2 minutes by default.  If you want to change the bot you will need to open up the script file ft_bot.py in an editor(Notepad++, Pycharm, Atom, etc).
-
-Scroll all the way down to the bottom of the script to here.
-> scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', minutes=2)
-
-Only change the last argument(minutes=2) to change how often the bot runs.
-
-
-30 Seconds
-```
-scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', seconds=30)
-```
-
-1 minute
-```
-scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', minutes=1)
-```
-5 minutes
-```
-scheduler.add_job(bot.batch_update,'interval', id='batch_id_001', minutes=5)
-```
+The bot will only run once.  Please use your OS's task scheduler for setting up multiple reruns or switch to V1.3.
