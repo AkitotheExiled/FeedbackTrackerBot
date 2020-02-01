@@ -17,7 +17,7 @@ import time
 class Scs_Bot():
 
     def __init__(self):
-        self.user_agent = "SportsCardSales Bot V0.1 by ScoopJr"
+        self.user_agent = "SportsCardSales Bot V0.2 by ScoopJr"
         print('Starting up...', self.user_agent)
         CONFIG = ConfigParser()
         CONFIG.read('config.ini')
@@ -60,12 +60,12 @@ class Scs_Bot():
         return db_data
 
     def get_date_from_utc(self, utc_timestamp):
-        post_time = datetime.utcfromtimestamp(int(utc_timestamp)).strftime('%Y-%m-%d')
-        post_time = datetime.strptime(post_time, '%Y-%m-%d')
+        post_time = datetime.utcfromtimestamp(int(utc_timestamp)).strftime('%B %Y')
+        #post_time = datetime.strptime(post_time, '%Y-%B')
         return post_time
 
     def bot_action(self):
-        reply_template = "* Username: {}\n* Join date: {}\n* Link Karma: {}\n* Comment Karma: {} \n* Confirmed feedback: {}\n\n[You may view this users feedback here.]({})\n\nThis information does not guarantee a successful sale.  It is for you to use to screen potential sellers."
+        reply_template = "* Username: u/{}\n* Join date: {}\n* Post Karma: {}\n* Comment Karma: {} \n* Feedback: {}\n\n[You may view this users feedback here.]({})\n\nThis information does not guarantee a successful sale.  It is for you to use to screen potential sellers."
 
         tracker_link = 'https://www.reddit.com/r/SportsCardTracker/search/?q={}&restrict_sr=1&sort=new'
         feedback = None
