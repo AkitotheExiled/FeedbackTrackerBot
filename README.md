@@ -1,17 +1,16 @@
 # FeedbackTrackerBot
  Tracks the feedback for users on /r/SportsCardTracker
  
-##### Demo up at www.reddit.com/r/kgamers
  
- #### How does it work?
-Feedback_tracker.py
+ ## How does it work?
+**Feedback_tracker.py**
 1. Gathers all feedback in your feedback tracker subreddit.
 * It checks titles for the words, [positive, negative, neutral] and based on the word it assigns a value(1,-1,0)
 ------
-Feedback_reply.py
+**Feedback_reply.py**
 1. Replies to all posts in your sale subreddit with the user's feedback data.
- 
- ### config.ini
+ ---
+ ## config.ini
  ```
 USER = yourusername
 PASSWORD= yourpassword
@@ -23,7 +22,7 @@ SEARCH_FLAIR=Feedback Tracker
 DEBUG=False
 ```
 
-#### SUBREDDIT_TRACKER
+### SUBREDDIT_TRACKER
 This is your subreddit where you track user feedback.  User's will post feedback about their sellers and the bot takes that information and adds it into the database. An example,
 
 ```
@@ -31,7 +30,7 @@ title: [positive] u/scoopjr
 bot will take that feedback and give scoopjr a +1.
 ```
 
-#### SUBREDDIT_REPLY
+### SUBREDDIT_REPLY
 This subreddit is where users will buy/sell/trade.  This is used for feedback_reply.py where that script will automatically reply to users with feedback information.  An example,
 ```
 title: Selling prime rib steak! 200$ shipped
@@ -45,7 +44,7 @@ This bot is used for screening purposes and does not guarantee a successful trad
 ```
 
 
-#### Title format
+### Title format
 ```
 Title format: [positive] u/username or positive /u/username
 
@@ -53,7 +52,7 @@ Title format: [positive] u/username or positive /u/username
 The above format is a requirement to track feedback from users.  Please see the automoderator rule for setting this up automatically with automod.
 
 
-##### requirements.txt
+### requirements.txt
 ```
 altgraph==0.16.1
 APScheduler==3.6.1
@@ -77,17 +76,22 @@ urllib3==1.25.6
 websocket-client==0.56.0
 
 ```
-##### How many subreddits do I need to run this bot?
-2 subreddits. 1 for tracking feedback and another for buying/selling.
+#### How many subreddits do I need to run this bot?
 
-##### How do I run this bot on my subreddit?
+You need 2 subreddits to use this bot.
+
+#### How do I run this bot on my subreddit?
+
 1.You need to run feedback_tracker.py
+
 2.Then, you may run feedback_reply.py
 
-##### Will you run this bot for me?
+#### Will you run this bot for me?
+
 No, you may run this bot off a Raspberry Pi, home PC, or online cloud service.  I will not run this bot for you.
 
-##### What was that automoderator rule for enforcing title formatting, again?
+#### What was that automoderator rule for enforcing title formatting, again?
+
 ```
 ---
     ~title (regex,full-exact): '[\[\{.]*(positive|negative|neutral)[(\s|\S)]+u\/([a-zA-Z0-9!$*-_]*)'
