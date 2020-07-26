@@ -24,6 +24,7 @@ class Scs_Bot(RedditBaseClass):
         self.log = Logger()
         self.logger = self.log.logger # Logger().logger Logger class with the attribute logger = getlogger(__name__)
         self.error_delay = 70 # 1 minute and 10 seconds delay incase PRAW gets an APIEXCEPTION FROM REDDIT
+        self.subreddit = self.sub_reply
 
     def get_token(self):
         """ Retrieves token for Reddit API."""
